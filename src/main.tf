@@ -18,3 +18,15 @@ module "rds" {
 module "ecr" {
   source = "./modules/ecr"
 }
+
+module "cloudmap" {
+  source = "./modules/cloudmap"
+  vpc_id = module.network.aws_vpc_pdi_id
+}
+
+module "ecs" {
+  source            = "./modules/ecs"
+  public_subnets    = module.network.aws_vpc_public_subntes_id
+  private_namespace = module.cloudmap.private_namespace
+  vpc_id            = module.network.aws_vpc_pdi_id
+}
