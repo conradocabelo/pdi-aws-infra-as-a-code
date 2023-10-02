@@ -14,3 +14,7 @@ module "rds" {
   subnet_ids        = module.network.aws_vpc_public_subntes_id
   depends_on        = [module.security_groups]
 }
+
+module "ecr" {
+  source = "./modules/ecr"
+}
