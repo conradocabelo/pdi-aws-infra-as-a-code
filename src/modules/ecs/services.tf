@@ -1,30 +1,3 @@
-data "aws_iam_role" "ecs_task_execution_role" {
-  name = "ecsTaskExecutionRole"
-}
-
-data "aws_iam_policy_document" "task_role_policy" {
-  statement {
-    actions = ["sts:AssumeRole"]
-
-    principals {
-      type        = "Service"
-      identifiers = ["ecs-tasks.amazonaws.com"]
-    }
-  }
-}
-
-resource "aws_iam_role" "ecs_task_role" {
-  for_each = tomap({ for t in var.ecs_tasks : "${t.family}" => t })
-  name = lower("${each.key}-role")
-  assume_role_policy = data.aws_iam_policy_document.task_role_policy.json
-}
-
-resource "aws_iam_role_policy_attachment" "ecs_task_execution_role_policy" { 
-  for_each = tomap({ for t in var.ecs_tasks : "${t.family}" => t }) 
-  role       = aws_iam_role.ecs_task_role["${each.key}"].name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
-}
-
 resource "aws_security_group" "spring_api_sg" {
   name   = "spring_api_sg"
   vpc_id = var.vpc_id
@@ -56,8 +29,9 @@ resource "aws_ecs_task_definition" "ecs_task" {
   requires_compatibilities = ["FARGATE"]
   cpu                      = each.value.cpu
   memory                   = each.value.memory
-  execution_role_arn       = data.aws_iam_role.ecs_task_execution_role.arn
-  task_role_arn            = aws_iam_role.ecs_task_role[each.key].arn  
+
+  execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
+  task_role_arn            = aws_iam_role.ecs_task_execution_role.arn
 
   container_definitions = file("./${path.module}/${each.value.enviroment_file}")
 }
